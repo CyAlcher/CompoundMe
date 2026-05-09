@@ -7,12 +7,12 @@ contract:
 human_in_loop:
   mode: approve-before
   reviewers:
-    - max@example.com
+    - alice@example.com
 notify:
   on_success:
-    - email:max@example.com
+    - email:alice@example.com
   on_failure:
-    - email:max@example.com
+    - email:alice@example.com
 exec:
   source_uri: "/tmp/ai_ready_demo.txt"
   target_uri: ""

@@ -19,7 +19,7 @@ notify:
   on_success:
     - console:stdout
   on_failure:
-    - email:max@example.com
+    - email:alice@example.com
 exec:
   platform: xiaohongshu
   tone: 轻松口语

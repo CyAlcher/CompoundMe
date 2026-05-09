@@ -16,5 +16,5 @@ notify:
   on_failure:
     - console:stdout
 exec:
-  repo: "max/my-project"
+  repo: "alice/my-project"
   command: "python -c 'print(1+1)'"

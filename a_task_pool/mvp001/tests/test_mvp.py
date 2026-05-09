@@ -95,7 +95,7 @@ def test_route_approve_before_explicit():
         _minimal(
             human_in_loop={
                 "mode": "approve-before",
-                "reviewers": ["max@x.com"],
+                "reviewers": ["alice@example.com"],
             }
         )
     )
@@ -123,7 +123,7 @@ def test_pool_approve_flow(tmp_path: Path):
             task_id="t-approve",
             human_in_loop={
                 "mode": "approve-before",
-                "reviewers": ["max@x.com"],
+                "reviewers": ["alice@example.com"],
             },
         )
     )

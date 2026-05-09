@@ -226,7 +226,7 @@ cd src
 python3 task_ledger.py --config ../config/app_config.json create-task \
   --task-id task-20260325-report-01 \
   --task-date 2026-03-25 \
-  --owner max \
+  --owner alice \
   --task-type report \
   --task-name "Client ROI recap" \
   --delivery-type markdown_report \
@@ -262,7 +262,7 @@ cd src
 python3 task_ledger.py --config ../config/app_config.json autolink-artifacts \
   --start-date 2026-03-01 \
   --end-date 2026-03-31 \
-  --owner max
+  --owner alice
 ```
 
 ### Generate data quality reports
@@ -272,7 +272,7 @@ cd src
 python3 data_quality_report.py --config ../config/app_config.json \
   --start-date 2026-03-01 \
   --end-date 2026-03-31 \
-  --owner max \
+  --owner alice \
   --output-dir ../out/data_quality
 ```
 
@@ -283,7 +283,7 @@ cd src
 python3 roi_audit_report.py --config ../config/app_config.json \
   --start-date 2026-03-01 \
   --end-date 2026-03-31 \
-  --owner max \
+  --owner alice \
   --output ../out/roi_audit_report.md
 ```
 
@@ -294,7 +294,7 @@ cd src
 python3 export_audit_pack.py --config ../config/app_config.json \
   --start-date 2026-03-01 \
   --end-date 2026-03-31 \
-  --owner max \
+  --owner alice \
   --output-dir ../out/audit_pack
 ```
 
@@ -340,7 +340,12 @@ python3 -m pytest
 
 ## License
 
-MIT
+**Dual-licensed — non-commercial use is free, commercial use requires a paid license.** See [`LICENSE`](./LICENSE) for the full text.
+
+- **Non-commercial** (personal use, academic research, evaluation, non-profit OSS contribution): free, subject to the attribution and naming conditions in the LICENSE.
+- **Commercial** (paid products, SaaS, internal for-profit use, paid consulting / training built on this code, redistribution for a fee): requires a separate commercial license. Open a GitHub issue with the prefix `[commercial]` to start a conversation.
+
+Copyright (c) 2026 CyAlcher. All rights reserved.
 
 ---
 
@@ -377,3 +382,15 @@ safe to commit and share. Design notes live in `a_task_pool/自动化工作流�
 ## Contributing
 
 Issues and PRs welcome. Please do not commit any personal session data, API keys, or real prompt content in examples.
+
+---
+
+## Stay in Touch
+
+Follow the WeChat official account for release notes, usage tips, and discussion on L1→L4 digital-twin practice. Scan below:
+
+<p align="center">
+  <img src="docs/wechat_official_qr.jpg" alt="CompoundMe WeChat Official Account" width="220" />
+</p>
+
+For commercial licensing inquiries, see the [License](#license) section above or open a GitHub issue with the `[commercial]` prefix.
