@@ -1,0 +1,47 @@
+{
+  "paths": {
+    "base_dir": "~/.ai-trace",
+    "daily_root": "~/.ai-trace/daily",
+    "db_path": "~/.ai-trace/data/ai_review.db",
+    "state_dir": "~/.ai-trace/state",
+    "log_dir": "~/.ai-trace/logs"
+  },
+  "sources": {
+    "codex": "~/.codex/sessions",
+    "claude": "~/.claude/projects",
+    "cursor": "~/.cursor/projects"
+  },
+  "filters": {
+    "exclude_path_substrings": ["/subagents/", "/terminals/"],
+    "cursor_include_path_substring": "/agent-transcripts/",
+    "noise_patterns": [
+      "Filesystem sandboxing defines which files can be read or written",
+      "# Collaboration Mode:",
+      "The user interrupted the previous turn on purpose",
+      "OS Version:",
+      "open_and_recently_viewed_files",
+      "system_reminder",
+      "agent_skills"
+    ]
+  },
+  "schedule": {
+    "runner": {
+      "hour": 19,
+      "minute": 0,
+      "run_at_load": true
+    },
+    "monitor": [
+      {"hour": 20, "minute": 30},
+      {"hour": 21, "minute": 30},
+      {"hour": 22, "minute": 30}
+    ]
+  },
+  "mail": {
+    "config_path": "~/.ai-trace/config/mail_config.json"
+  },
+  "reports": {
+    "daily_folder_pattern": "{yyyymmdd}_ai_review",
+    "daily_report_name": "daily_report.md",
+    "weekly_report_name": "weekly_report.md"
+  }
+}

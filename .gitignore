@@ -1,0 +1,41 @@
+# Runtime data — never commit
+data/
+logs/
+state/
+*.db
+*.db-shm
+*.db-wal
+
+# Personal config (contains paths and credentials)
+config/app_config.json
+config/mail_config.json
+
+# Generated reports
+daily/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# a_task_pool runtime
+a_task_pool/mvp001/.taskpool/
+a_task_pool/mvp001/scripts/out/
+a_task_pool/mvp001/templates/pk-*.yaml
+a_task_pool/mvp001/聚类结果.png
+

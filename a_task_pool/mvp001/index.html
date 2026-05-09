@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>任务池 · MVP</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif; max-width: 1100px; margin: 24px auto; padding: 0 16px; color: #222; }
+  h1 { margin: 0 0 4px; font-size: 20px; }
+  h2 { font-size: 15px; margin: 20px 0 8px; color: #555; }
+  .hint { color: #888; font-size: 12px; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  textarea { width: 100%; min-height: 320px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; }
+  input, select { font-size: 13px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+  button { padding: 6px 12px; font-size: 13px; border: 1px solid #2563eb; background: #2563eb; color: white; border-radius: 4px; cursor: pointer; }
+  button.secondary { background: white; color: #2563eb; }
+  button.danger { background: white; color: #b91c1c; border-color: #b91c1c; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+  pre { background: #f6f8fa; padding: 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; max-height: 200px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #fafafa; font-weight: 600; color: #666; }
+  td.id { font-family: ui-monospace, Menlo, monospace; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+  .s-pending { background: #dbeafe; color: #1e40af; }
+  .s-awaiting_approval { background: #fef3c7; color: #92400e; }
+  .s-running { background: #e0e7ff; color: #4338ca; }
+  .s-done { background: #dcfce7; color: #166534; }
+  .s-failed { background: #fee2e2; color: #991b1b; }
+  .ok { color: #166534; }
+  .err { color: #991b1b; }
+</style>
+</head>
+<body>
+
+<h1>AI-Ready 任务池 · MVP</h1>
+<p class="hint">在左侧贴 YAML 或 JSON，点击「提交入池」会走后端 loader → router → pool；右侧实时查看池内任务。</p>
+
+<div class="grid">
+  <section>
+    <h2>填写任务</h2>
+    <div class="row">
+      <label>模板:</label>
+      <select id="tpl">
+        <optgroup label="调研 · research">
+          <option value="arch_review">架构图评审（AI-Native 设计）</option>
+          <option value="github_eval">GitHub 仓库能力评估</option>
+          <option value="paper_review">论文 / 文档 review</option>
+          <option value="exec_report">向高管汇报文档</option>
+        </optgroup>
+        <optgroup label="代码 · github-dev">
+          <option value="pipeline_fix">pipeline 代码修改（notify）</option>
+        </optgroup>
+        <optgroup label="数据 · data-ops">
+          <option value="fetch">fetch（auto · 演示）</option>
+          <option value="badcase_debug">销量预测 badcase 排查</option>
+          <option value="scene_analysis">场景数据分析（what-if）</option>
+          <option value="delete">delete（approve · 演示）</option>
+        </optgroup>
+        <optgroup label="内容 · social-media">
+          <option value="publish">小红书发布（notify）</option>
+        </optgroup>
+      </select>
+      <label><input type="checkbox" id="asJson"> 以 JSON 提交</label>
+    </div>
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div class="row">
+      <button id="btnSubmit">提交入池</button>
+      <button id="btnRunAll" class="secondary">触发 run（消费一个）</button>
+    </div>
+    <h2>最近一次响应</h2>
+    <pre id="resp">（空）</pre>
+  </section>
+
+  <section>
+    <h2>
+      池内任务
+      <button id="btnRefresh" class="secondary" style="float:right">刷新</button>
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th>task_id</th><th>domain.intent</th><th>channel</th><th>status</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="rows"><tr><td colspan="5" class="hint">（加载中…）</td></tr></tbody>
+    </table>
+  </section>
+</div>
+
+<script>
+const TS = () => new Date().toISOString().slice(0, 10).replaceAll('-', '');
+const TEMPLATES = {
+  // --- research ---
+  arch_review: `task_id: "rs-${TS()}-arch-review"
+domain: research
+intent: summarize
+input_refs:
+  - type: markdown
+    path: ~/project/docs/architecture-review.md
+contract:
+  success_criteria:
+    - 输出包含架构合理性、闭环评估、Agent 协作三部分评审
+    - 引用至少 3 个业界参考
+  failure_modes:
+    - 泛泛而谈无真实引用
+    - 超过 200 行未分批写入
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  query: "architecture review for an AI-native forecasting pipeline, output loop evaluation + agent collaboration analysis"
+  sources:
+    - example.com
+  output_format: markdown
+`,
+
+  github_eval: `task_id: "rs-${TS()}-gh-eval"
+domain: research
+intent: summarize
+input_refs:
+  - type: repo
+    path: ~/project/src/module-a
+contract:
+  success_criteria:
+    - 输出能力评估清单（stars、活跃度、核心能力）
+    - 给出与 mirrorcop 的对照矩阵
+    - 列出 3 个以上加速生产力的落地场景
+  failure_modes:
+    - 未结合 26 年最新最佳实践
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  query: "evaluate the repo's capabilities, list 3 deployment scenarios, and compare against mirrorcop"
+  sources:
+    - github.com/example/module-a
+  output_format: markdown
+`,
+
+  paper_review: `task_id: "rs-${TS()}-paper"
+domain: research
+intent: summarize
+input_refs:
+  - type: markdown
+    path: ~/project/docs/model-notes.md
+contract:
+  success_criteria:
+    - 指出文档中不严谨/错误论断
+    - 对 Attention、DLinear、iTransformer 结论做学术级 review
+    - 判断作者水平是否达到专家级
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  query: "review the time-series forecasting notes, cross-check claims with current academic and industry best practice"
+  sources:
+    - arxiv.org
+  output_format: markdown
+`,
+
+  exec_report: `task_id: "rs-${TS()}-exec-report"
+domain: research
+intent: summarize
+input_refs:
+  - type: markdown
+    path: ~/project/docs/architecture-review.md
+  - type: markdown
+    path: ~/project/docs/design-notes.md
+contract:
+  success_criteria:
+    - 5-10 分钟可讲完的汇报文档
+    - 覆盖战略跃迁（数字时代 → AI 驱动）与价值主张（驱动增长）
+    - 底部附真实可校验的参考链接
+human_in_loop:
+  mode: approve-before
+  reviewers:
+    - max@example.com
+notify:
+  on_success:
+    - email:max@example.com
+exec:
+  query: "draft an AI-native briefing for execs / product / architecture"
+  sources: []
+  output_format: markdown
+`,
+
+  // --- github-dev ---
+  pipeline_fix: `task_id: "gh-${TS()}-pipeline-c-fix"
+domain: github-dev
+intent: add-feature
+input_refs:
+  - type: repo
+    path: ~/project/pipeline
+contract:
+  success_criteria:
+    - github 摘要回退为 his 版本的详细描述（含 stars / 新项目）
+    - 耗时从 10min+ 降到 his 级别
+    - 不再出现过期信息
+  failure_modes:
+    - 仍然泛泛而谈
+    - 真实性未校验
+  test_command: "bash run_intel_his.sh --dry-run"
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+  on_failure:
+    - email:max@example.com
+exec:
+  repo: "pipeline_c"
+  spec_file: ~/project/spec/spec.md
+`,
+
+  // --- data-ops ---
+  fetch: `task_id: "do-${TS()}-fetch"
+domain: data-ops
+intent: fetch
+contract:
+  success_criteria:
+    - 成功写出临时文件
+human_in_loop:
+  mode: none
+notify:
+  on_success:
+    - console:stdout
+exec:
+  source_uri: "local"
+  target_uri: "/tmp/ai_ready_demo.txt"
+  command: "date > /tmp/ai_ready_demo.txt && cat /tmp/ai_ready_demo.txt"
+`,
+
+  badcase_debug: `task_id: "do-${TS()}-badcase"
+domain: data-ops
+intent: transform
+input_refs:
+  - type: csv
+    path: ./badcase/sample_20260508.csv
+contract:
+  success_criteria:
+    - 输出 badcase 根因分类分布
+    - 头部样本占比 < 40%
+  failure_modes:
+    - 长尾样本裹挟导致结论失真
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+  on_failure:
+    - email:max@example.com
+exec:
+  source_uri: "./badcase/sample_20260508.csv"
+  target_uri: "./reports/badcase_root_cause.md"
+  transform_type: "root-cause-analysis"
+`,
+
+  scene_analysis: `task_id: "do-${TS()}-scene-analysis"
+domain: data-ops
+intent: transform
+input_refs:
+  - type: markdown
+    path: ~/project/docs/rollout-plan.md
+contract:
+  success_criteria:
+    - 以终为始倒推 MVP 场景（长尾 / 高销平稳 / 促销爆发）
+    - 每个候选场景给出 what-if 预期 + 数据结论
+    - 输出最终推荐场景及数据依据
+  failure_modes:
+    - 分析发散脱离场景目标
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  source_uri: "local feature store"
+  target_uri: "~/project/docs/analysis-plan.md"
+  transform_type: "what-if-analysis"
+`,
+
+  delete: `task_id: "do-${TS()}-delete"
+domain: data-ops
+intent: delete
+contract:
+  success_criteria:
+    - 删除指定文件
+human_in_loop:
+  mode: approve-before
+  reviewers:
+    - max@example.com
+notify:
+  on_success:
+    - console:stdout
+exec:
+  source_uri: "/tmp/ai_ready_demo.txt"
+  target_uri: ""
+  command: "rm -f /tmp/ai_ready_demo.txt && echo deleted"
+`,
+
+  // --- social-media ---
+  publish: `task_id: "sm-${TS()}-publish"
+domain: social-media
+intent: publish
+input_refs:
+  - type: markdown
+    path: ./drafts/${TS()}.md
+contract:
+  success_criteria:
+    - 文章已发布，返回 URL
+    - 封面图被采纳
+  failure_modes:
+    - 登录态失效
+    - 平台风控拦截
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+  on_failure:
+    - email:max@example.com
+exec:
+  platform: xiaohongshu
+  tone: 轻松口语
+  tag_list: [ai-workflow, claude, forecasting]
+`,
+};
+
+const $ = (id) => document.getElementById(id);
+
+// --- 最小 YAML 解析：支持本页模板涵盖的语法（k:v / 缩进 / - 列表 / 行内数组）。
+// 复杂 YAML 请勾选「以 JSON 提交」。
+function yamlToObj(src) {
+  const lines = src.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith('#'));
+  const root = {};
+  const stack = [{indent: -1, node: root, key: null}];
+  const parseVal = (raw) => {
+    const s = raw.trim();
+    if (!s) return null;
+    if (s === 'null' || s === '~') return null;
+    if (s === 'true') return true;
+    if (s === 'false') return false;
+    if (/^-?\d+$/.test(s)) return parseInt(s, 10);
+    if (/^-?\d*\.\d+$/.test(s)) return parseFloat(s);
+    if (s.startsWith('[') && s.endsWith(']')) {
+      const inner = s.slice(1, -1).trim();
+      if (!inner) return [];
+      return inner.split(',').map(x => parseVal(x));
+    }
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      return s.slice(1, -1);
+    }
+    return s;
+  };
+
+  for (const line of lines) {
+    const indent = line.match(/^ */)[0].length;
+    const body = line.slice(indent);
+    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
+    const parent = stack[stack.length - 1].node;
+
+    if (body.startsWith('- ')) {
+      const rest = body.slice(2);
+      if (!Array.isArray(parent)) throw new Error(`列表项出现在非数组位置: ${line}`);
+      const m = rest.match(/^([\w-]+):\s*(.*)$/);
+      if (m) {
+        const obj = {};
+        obj[m[1]] = m[2] ? parseVal(m[2]) : (() => {
+          const nested = {};
+          stack.push({indent, node: nested, key: m[1]});
+          obj[m[1]] = nested;
+          return nested;
+        })();
+        parent.push(obj);
+        stack.push({indent: indent + 2, node: obj, key: null});
+      } else {
+        parent.push(parseVal(rest));
+      }
+      continue;
+    }
+
+    const m = body.match(/^([\w-]+):\s*(.*)$/);
+    if (!m) throw new Error(`无法解析: ${line}`);
+    const key = m[1], val = m[2];
+    if (val === '') {
+      // 下一行决定是 {} 还是 []，先建 {}，遇到 - 再换成 []
+      const node = {};
+      parent[key] = node;
+      const frame = {indent, node, key};
+      stack.push(frame);
+      // peek 下一行判断
+      const idx = lines.indexOf(line);
+      const next = lines[idx + 1];
+      if (next) {
+        const ni = next.match(/^ */)[0].length;
+        if (ni > indent && next.slice(ni).startsWith('- ')) {
+          const arr = [];
+          parent[key] = arr;
+          frame.node = arr;
+        }
+      }
+    } else {
+      parent[key] = parseVal(val);
+    }
+  }
+  return root;
+}
+
+function setTpl(name) {
+  $('editor').value = TEMPLATES[name];
+}
+
+async function refresh() {
+  const res = await fetch('/api/tasks');
+  const rows = await res.json();
+  const tbody = $('rows');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="hint">（池空）</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const actions = [];
+    if (r.status === 'awaiting_approval') {
+      actions.push(`<button class="secondary" data-act="approve" data-id="${r.task_id}">approve</button>`);
+    }
+    if (r.status === 'pending') {
+      actions.push(`<button data-act="run" data-id="${r.task_id}">run</button>`);
+    }
+    return `<tr>
+      <td class="id">${r.task_id}</td>
+      <td>${r.domain}.${r.intent}</td>
+      <td>${r.channel}</td>
+      <td><span class="tag s-${r.status}">${r.status}</span></td>
+      <td>${actions.join(' ') || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function post(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body || {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  return {ok: res.ok, status: res.status, data};
+}
+
+function showResp(label, r) {
+  const cls = r.ok ? 'ok' : 'err';
+  $('resp').innerHTML = `<span class="${cls}">${label}  [${r.status}]</span>\n` +
+    JSON.stringify(r.data, null, 2);
+}
+
+$('tpl').addEventListener('change', (e) => setTpl(e.target.value));
+
+$('btnSubmit').addEventListener('click', async () => {
+  const text = $('editor').value;
+  let payload;
+  try {
+    payload = $('asJson').checked ? JSON.parse(text) : yamlToObj(text);
+  } catch (e) {
+    showResp('解析失败', {ok: false, status: 0, data: {error: String(e)}});
+    return;
+  }
+  const r = await post('/api/submit', payload);
+  showResp('submit', r);
+  refresh();
+});
+
+$('btnRunAll').addEventListener('click', async () => {
+  const r = await post('/api/run', {});
+  showResp('run', r);
+  refresh();
+});
+
+$('btnRefresh').addEventListener('click', refresh);
+
+$('rows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.act === 'approve') {
+    const r = await post('/api/approve', {task_id: id});
+    showResp('approve', r);
+  } else if (btn.dataset.act === 'run') {
+    const r = await post('/api/run', {task_id: id});
+    showResp('run', r);
+  }
+  refresh();
+});
+
+setTpl('arch_review');
+$('tpl').value = 'arch_review';
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

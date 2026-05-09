@@ -1,0 +1,19 @@
+task_id: "do-2026-05-09-delete"
+domain: data-ops
+intent: delete
+contract:
+  success_criteria:
+    - 删除指定文件
+human_in_loop:
+  mode: approve-before
+  reviewers:
+    - max@example.com
+notify:
+  on_success:
+    - email:max@example.com
+  on_failure:
+    - email:max@example.com
+exec:
+  source_uri: "/tmp/ai_ready_demo.txt"
+  target_uri: ""
+  command: "rm -f /tmp/ai_ready_demo.txt && echo deleted"

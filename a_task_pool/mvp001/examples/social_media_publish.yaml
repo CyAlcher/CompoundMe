@@ -1,0 +1,26 @@
+task_id: "sm-2026-05-09-001"
+domain: social-media
+intent: publish
+input_refs:
+  - type: markdown
+    path: ./drafts/2026-05-09.md
+  - type: image
+    path: ./assets/cover.png
+contract:
+  success_criteria:
+    - 文章已发布到小红书，返回 URL
+    - 封面图已上传且被采纳
+  failure_modes:
+    - 登录态失效
+    - 平台风控拦截
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+  on_failure:
+    - email:max@example.com
+exec:
+  platform: xiaohongshu
+  tone: 轻松口语
+  tag_list: [AI工作流, Claude]

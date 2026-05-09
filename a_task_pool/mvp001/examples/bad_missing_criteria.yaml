@@ -1,0 +1,11 @@
+# 缺 contract.success_criteria（必填），用来演示拒绝入池
+task_id: "bad-2026-05-09-001"
+domain: social-media
+intent: publish
+contract:
+  failure_modes:
+    - 登录态失效
+human_in_loop:
+  mode: none
+exec:
+  platform: xiaohongshu

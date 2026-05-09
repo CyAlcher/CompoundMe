@@ -1,0 +1,16 @@
+task_id: "pk-example-summarize"
+domain: research
+intent: summarize
+input_refs: []
+contract:
+  success_criteria:
+    - 复用该高频 prompt 生成可用总结
+  failure_modes: []
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  query: "阅读 ~/project/docs/design.md，总结核心目标与当前差距，给出下一步行动清单。"
+  output_format: markdown

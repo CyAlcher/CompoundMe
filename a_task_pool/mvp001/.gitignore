@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.taskpool/
+scripts/out/schema_notes.md

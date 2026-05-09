@@ -1,0 +1,16 @@
+task_id: "pk-example-debug"
+domain: research
+intent: debug
+input_refs: []
+contract:
+  success_criteria:
+    - 定位脚本异常并给出修复建议
+  failure_modes: []
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  query: "为什么 ~/project/src/pipeline_main.py 有数据异常，而 ~/project/src/pipeline_daily.py 没有？对比两处处理逻辑并指出原因。"
+  output_format: markdown

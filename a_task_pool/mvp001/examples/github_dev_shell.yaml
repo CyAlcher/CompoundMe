@@ -1,0 +1,20 @@
+task_id: "gh-2026-05-09-lint"
+domain: github-dev
+intent: create-branch
+input_refs:
+  - type: repo
+    path: ./my-project
+contract:
+  success_criteria:
+    - python 语法检查通过
+  test_command: "python -c 'print(1+1)'"
+human_in_loop:
+  mode: none
+notify:
+  on_success:
+    - console:stdout
+  on_failure:
+    - console:stdout
+exec:
+  repo: "max/my-project"
+  command: "python -c 'print(1+1)'"

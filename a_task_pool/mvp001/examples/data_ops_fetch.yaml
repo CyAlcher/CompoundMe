@@ -1,0 +1,15 @@
+task_id: "do-2026-05-09-fetch"
+domain: data-ops
+intent: fetch
+contract:
+  success_criteria:
+    - 成功写出临时文件
+human_in_loop:
+  mode: none
+notify:
+  on_success:
+    - console:stdout
+exec:
+  source_uri: "local"
+  target_uri: "/tmp/ai_ready_demo.txt"
+  command: "date > /tmp/ai_ready_demo.txt && cat /tmp/ai_ready_demo.txt"

@@ -1,0 +1,5 @@
+# ai-trace has no third-party dependencies.
+# All modules used are part of the Python standard library:
+#   sqlite3, json, re, hashlib, smtplib, email, pathlib, argparse, dataclasses, collections
+#
+# Python 3.10+ required.

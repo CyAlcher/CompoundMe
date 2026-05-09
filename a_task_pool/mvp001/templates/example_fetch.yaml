@@ -1,0 +1,16 @@
+task_id: "pk-example-fetch"
+domain: research
+intent: fetch
+input_refs: []
+contract:
+  success_criteria:
+    - 生成可直接执行的排查 SQL
+  failure_modes: []
+human_in_loop:
+  mode: notify-after
+notify:
+  on_success:
+    - console:stdout
+exec:
+  query: "不要用 CTE 作为输入，改用最原始的事实表，输出一段排查 SQL 写入 ~/project/sql/check.sql，包含：1 作用说明；2 执行顺序；3 每段 SQL 注明对应排查方向。"
+  output_format: markdown
