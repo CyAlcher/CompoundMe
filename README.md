@@ -1,6 +1,20 @@
+<div align="center">
+
 # CompoundMe
 
-> Your AI collaboration, compounding. See it (L1) → standardise it (L2) → automate it (L3) → let your digital twin handle it (L4).
+**Your AI collaboration, compounding.**
+
+> See it (L1) → standardise it (L2) → automate it (L3) → let your digital twin handle it (L4)
+
+[中文简介](#中文简介) ·
+[Quick Start](#quick-start) ·
+[L1→L4 Ladder](#the-l1--l4-ladder) ·
+[Project Structure](#project-structure) ·
+[Roadmap](#roadmap)
+
+</div>
+
+---
 
 **CompoundMe** is a local-first toolkit for building your own personal-twin stack from the daily AI-coding sessions you already have. It ships two pieces:
 
@@ -387,10 +401,93 @@ Issues and PRs welcome. Please do not commit any personal session data, API keys
 
 ## Stay in Touch
 
-Follow the WeChat official account for release notes, usage tips, and discussion on L1→L4 digital-twin practice. Scan below:
+左边是**公众号**，更新项目动态与 AI 协作复利的实战内容；
+右边是**个人微信**，交流、反馈、提 bug、商业合作都欢迎。
 
-<p align="center">
-  <img src="docs/wechat_official_qr.jpg" alt="CompoundMe WeChat Official Account" width="220" />
-</p>
+<table>
+  <tr>
+    <td align="center">
+      <img src="imgs/gongzhonghao.jpg" alt="微信公众号" width="200"><br>
+      <sub>微信公众号</sub>
+    </td>
+    <td align="center">
+      <img src="imgs/kefu.png" alt="个人微信" width="200"><br>
+      <sub>个人微信（交流 / 反馈）</sub>
+    </td>
+  </tr>
+</table>
 
-For commercial licensing inquiries, see the [License](#license) section above or open a GitHub issue with the `[commercial]` prefix.
+For commercial licensing inquiries, open a GitHub issue with the `[commercial]` prefix.
+
+---
+
+## 中文简介
+
+**你的 AI 协作，持续复利。**
+
+> 看见它（L1）→ 标准化它（L2）→ 自动化它（L3）→ 让你的数字分身来处理（L4）
+
+**CompoundMe** 是一个本地优先的工具包，帮你从每天已有的 AI 编程会话中构建个人数字分身体系。它包含两个核心模块：
+
+- **MirrorCop**（`src/`）—— L1 镜像层。将 Claude Code / Codex CLI / Cursor 的会话日志解析写入本地 SQLite 数据库，并将这些事件转化为 ROI 和资产证据台账。
+- **prompt-kit**（`a_task_pool/mvp001/`）—— L2→L3 消费层。从镜像数据库中挖掘高频 prompt，将其转化为可复用的六字段 YAML 模板，并送入本地任务池（自动 / 事后通知 / 事前审批 三通道）。
+
+所有数据留在你的机器上。无云端，无厂商锁定，prompt 数据永远不会离开 `~/.ai-trace/`。
+
+### L1 → L4 成长阶梯
+
+| 层级 | 含义 | 代码位置 |
+|---|---|---|
+| **L1 数字化** | 看清你每天真正用 AI 做了什么 | `src/ai_review_pipeline.py` → `~/.ai-trace/data/ai_review.db` |
+| **L2 标准化** | 将高频 prompt 聚类成六字段任务模板 | `a_task_pool/mvp001/scripts/prompt_kit_weekly.py` |
+| **L3 自动化** | 通过自动 / 通知 / 审批三通道路由标准化任务 | `a_task_pool/mvp001/cli.py` + `task_pool/router.py` |
+| **L4 数字分身** | 由你的数字分身代为执行重复性工作 | 路线图中 —— L3 的六字段契约即为接入点 |
+
+核心循环：
+
+```
+使用 AI → 采集行为 → 分类归因 → 资产化模式 → 复用 → 更好地使用 AI → 更多信号
+```
+
+这不是线性提升，而是复利。
+
+### 快速开始
+
+```bash
+# 1. 克隆并配置
+git clone https://github.com/CyAlcher/compoundme.git
+cd compoundme
+cp config/app_config.example.json config/app_config.json
+# 编辑 config/app_config.json，设置你的 AI 工具会话路径
+
+# 2. 运行 L1 流水线
+cd src
+python3 ai_review_pipeline.py --config ../config/app_config.json
+
+# 3. 挖掘高频 prompt，生成任务模板
+cd ../a_task_pool/mvp001
+python scripts/prompt_kit_weekly.py --days 7
+python cli.py submit templates/example_fetch.yaml
+python cli.py run --max-tasks 1
+```
+
+### 与同类工具的差异
+
+| 现有工具 | CompoundMe |
+|----------------|-----------|
+| LLM 可观测性（Langfuse、Phoenix） | 个人协作归因，而非请求追踪 |
+| Prompt 管理工具 | Prompt 从真实会话中挖掘，而非手工整理 |
+| 一次性分析 | 递归复利——用得越多，越精准 |
+| 云端 / 团队优先 | 本地优先，数据完全自有 |
+
+### 隐私说明
+
+- 所有数据**本地存储**，不向任何外部服务发送
+- prompt 文本中的绝对 home 路径自动脱敏为 `~`
+- `.gitignore` 已排除 `data/`、`logs/`、`state/` 和所有 `*.db` 文件
+
+### 许可证
+
+**双重许可——非商业使用免费，商业使用需付费授权。** 完整条款见 [`LICENSE`](./LICENSE)。
+
+Copyright (c) 2026 CyAlcher. All rights reserved.
